@@ -1,0 +1,134 @@
+rm(list=ls())
+setwd("/Users/maxwinwadia/Desktop/Dataset/")
+
+
+library(ggplot2)
+library(dplyr)
+library(plotly)
+
+covid<-read.csv("covid_19_data.csv",header = TRUE)
+head(covid)
+temp = covid[covid$Country.Region=='Italy',]
+head(temp)
+a=ggplot(temp,aes(x=Confirmed))
+#a+geom_histogram(bins = 150,fill="#00FFFF")
+a + geom_histogram(fill = "steelblue", alpha = 0.6, position="identity")
+
+
+a + geom_histogram(color = "tomato", fill = "steelblue",bins = 10)+ 
+  geom_vline(aes(xintercept=mean(Confirmed)),color="#FC7E19", linetype="dashed", size=0.5) +
+  theme_minimal()
+
+
+
+#Density Distribution in Italy of people that are for Emergency Unit,Home Confinement and Patients Hospitalized with symptoms
+setwd("/Users/maxwinwadia/Desktop/Stevens/EM 622/Midterm/Dataset/csv/")
+italy_total<-read.csv("italy_total.csv",header = TRUE)
+
+#italy_total$date <- toString(italy_total$date)
+#italy_total <- data.frame(lapply(italy_total, as.character), stringsAsFactors=FALSE)
+
+#as.character(italy_total$date)
+sapply(italy_total, class)
+italy_total$date2<-as.Date(as.character(italy_total$date), format = "%Y-%m-%d")
+
+plot_ly(data = italy_total,
+        x = ~ date2,        
+        y = ~home_confinement,        
+        name = 'Home Confinement',        
+        fillcolor = '#00FF80',        
+        type = 'scatter',        
+        mode = 'none',        
+        stackgroup = 'one') %>%        
+  add_trace( y = ~ hospitalized_with_symptoms,   
+             name = "Patients Hospitalized with symptoms",             
+             fillcolor = '#CCFFFF') %>%             
+  add_trace(y = ~intensive_care,  
+            name = 'Emergency Unit',            
+            fillcolor = '#00CCCC') %>%            
+  layout(title = "Italy Distribution of Covid19",  
+         legend = list(x = 0.1, y = 0.9),         
+         yaxis = list(title = "Number of Cases"),         
+         xaxis = list(title = "Italy Department of Civil Protection"))
+
+
+#Density Distribution in Italy of people those who have Recovered, Death and Active
+plot_ly(data = italy_total,
+        x = ~ date2,
+        y = ~cumulative_positive_cases, 
+        name = 'ACTIVE', 
+        fillcolor = '#FAEBD7',
+        type = 'scatter',
+        mode = 'none', 
+        stackgroup = 'one') %>%
+  add_trace( y = ~ death, 
+             name = "DEATH",
+             fillcolor = '#FF69B4') %>%
+  add_trace(y = ~recovered, 
+            name = 'RECOVERED', 
+            fillcolor = '#7FFFD4') %>%
+  layout(title = "Italy Distribution of Covid19",
+         legend = list(x = 0.1, y = 0.9),
+         yaxis = list(title = "Number of Cases"),
+         xaxis = list(title = "Italy Department of Civil Protection"))
+
+italy_region<-read.csv("italy_region.csv",header = TRUE)
+
+sapply(italy_region, class)
+italy_region$date2<-as.Date(as.character(italy_region$date), format = "%Y-%m-%d")
+
+colnames(italy_region)
+#Cases distribution by Region
+italy_region %>% 
+  filter(date2 == max(date2)) %>% 
+  select(region_name, cumulative_positive_cases, recovered, death) %>%
+  arrange(-cumulative_positive_cases) %>%
+  mutate(region = factor(region_name, levels = region_name)) %>%
+  plot_ly(y = ~ region, 
+          x = ~ cumulative_positive_cases, 
+          orientation = 'h',
+          text =  ~ cumulative_positive_cases,
+          textposition = 'auto',
+          type = "bar", 
+          name = "ACTIVE",
+          marker = list(color = "	#00FFFF")) %>%
+  add_trace(x = ~ recovered,
+            text =  ~ recovered,
+            textposition = 'auto',
+            name = "CURED",
+            marker = list(color = "	#00FF7F")) %>%
+  add_trace(x = ~ death, 
+            text =  ~ death,
+            textposition = 'auto',
+            name = "DEATH",
+            marker = list(color = "#FF69B4")) %>%
+  layout(title = "Cases Distribution by Region",
+         barmode = 'stack',
+         yaxis = list(title = "Region"),
+         xaxis = list(title = "Number of Cases"),
+         hovermode = "compare",
+         legend = list(x = 0.65, y = 0.9),
+         margin =  list(
+           l = 20,
+           r = 10,
+           b = 10,
+           t = 30,
+           pad = 2
+         )) 
+
+
+italy_province<-read.csv("italy_province.csv",header = TRUE)
+
+sapply(italy_province, class)
+italy_province$date2<-as.Date(as.character(italy_province$date), format = "%Y-%m-%d")
+
+#Pie chart of cases distribuiton by Province
+italy_province %>% 
+  filter(date2 == max(date2), region_name == "Lombardia") %>%
+  plot_ly(labels = ~province_name, values = ~total_cases, 
+          textinfo="label+percent",
+          type = 'pie') %>%
+  layout(title = "Lombardia - Cases Distribution by Province") %>% 
+  hide_legend()
+
+
